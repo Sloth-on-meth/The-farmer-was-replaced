@@ -2,15 +2,30 @@ size = get_world_size()
 pumpkin_split = size // 2
 
 while True:
+	#rollist = [1,2,3,4,5,6,7,8,9,10]
+	
+
 	for row in range(size):
+		
 		for col in range(size):
+#			hat_roll = random()
+#			#print(hat_roll)
+#			if hat_roll < 0.25:
+#				change_hat(Hats.Straw_Hat)
+#			elif hat_roll < 0.5:
+#				change_hat(Hats.Tree_Hat)
+#			elif hat_roll < 0.75:
+#				change_hat(Hats.Carrot_Hat)
+#			else:
+#				change_hat(Hats.Pumpkin_Hat)
 
 			#if num_items(Items.Fertilizer) > 0:
 			#		use_item(Items.Fertilizer)
 			if get_water() < 0.2:
-				if num_items(Items.Water) > 0:
+				
 					use_item(Items.Water)
-
+			use_item(Items.Fertilizer)
+			harvest()
 			if can_harvest():
 				harvest()
 
