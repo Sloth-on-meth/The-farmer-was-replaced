@@ -14,7 +14,15 @@ def opposite_direction(direction):
 		return West
 	return East
 
-def solve_maze(directions, max_steps, starting_gold):
+def shuffled_directions():
+	pool = [North, East, South, West]
+	result = []
+	while len(pool) > 0:
+		index = random() * len(pool) // 1
+		result.append(pool.pop(index))
+	return result
+
+def solve_maze(tie_order, use_random, max_steps, starting_gold):
 	visited = []
 	path = []
 	visited.append((get_pos_x(), get_pos_y()))
@@ -23,6 +31,11 @@ def solve_maze(directions, max_steps, starting_gold):
 	while steps < max_steps and num_items(Items.Gold) == starting_gold:
 		x = get_pos_x()
 		y = get_pos_y()
+
+		if use_random:
+			directions = shuffled_directions()
+		else:
+			directions = tie_order
 
 		moved = False
 		for i in range(4):
@@ -90,11 +103,16 @@ while True:
 
 	helpers = []
 	for i in range(1, count):
-		order = orders[i % 4]
-		helper = spawn_drone(solve_maze, order, max_steps, starting_gold)
+		if i < 4:
+			order = orders[i]
+			use_random = False
+		else:
+			order = orders[0]
+			use_random = True
+		helper = spawn_drone(solve_maze, order, use_random, max_steps, starting_gold)
 		helpers.append(helper)
 
-	solve_maze(orders[0], max_steps, starting_gold)
+	solve_maze(orders[0], False, max_steps, starting_gold)
 
 	for i in range(len(helpers)):
 		h = helpers[i]
