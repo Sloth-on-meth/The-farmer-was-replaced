@@ -44,21 +44,4 @@ while True:
 			move(South)
 
 	if pumpkin_active and pumpkin_ready:
-		while get_pos_x() > 0:
-			move(West)
-		while get_pos_y() < size - 1:
-			move(North)
-
-		for row in range(size):
-			for col in range(size):
-				if get_entity_type() == Entities.Dead_Pumpkin:
-					harvest()
-				elif can_harvest():
-					harvest()
-				if col < size - 1:
-					if row % 2 == 0:
-						move(East)
-					else:
-						move(West)
-			if row < size - 1:
-				move(South)
+		harvest()
