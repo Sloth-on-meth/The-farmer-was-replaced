@@ -1,99 +1,146 @@
-def in_list(coords, x, y):
-	for i in range(len(coords)):
-		cx, cy = coords[i]
-		if cx == x and cy == y:
-			return True
-	return False
-
-def opposite_direction(direction):
+def turn_left(direction):
 	if direction == North:
+		return West
+	if direction == West:
 		return South
 	if direction == South:
-		return North
+		return East
+	return North
+
+def turn_right(direction):
+	if direction == North:
+		return East
 	if direction == East:
+		return South
+	if direction == South:
 		return West
-	return East
+	return North
 
-def shuffled_directions():
-	pool = [North, East, South, West]
-	result = []
-	while len(pool) > 0:
-		index = random() * len(pool) // 1
-		result.append(pool.pop(index))
-	return result
+def pick_random(options):
+	r = random() * len(options) // 1
+	return options[r]
 
-def solve_maze(tie_order, use_random, max_steps, starting_gold):
-	visited = []
+def wall_follow_right(max_steps, starting_gold):
+	facing = North
+	steps = 0
+	while steps < max_steps and num_items(Items.Gold) == starting_gold:
+		side = turn_right(facing)
+		if can_move(side):
+			facing = side
+			move(facing)
+		elif can_move(facing):
+			move(facing)
+		else:
+			facing = turn_left(facing)
+
+		if get_entity_type() == Entities.Treasure:
+			harvest()
+			return
+
+		steps += 1
+
+def wall_follow_left(max_steps, starting_gold):
+	facing = North
+	steps = 0
+	while steps < max_steps and num_items(Items.Gold) == starting_gold:
+		side = turn_left(facing)
+		if can_move(side):
+			facing = side
+			move(facing)
+		elif can_move(facing):
+			move(facing)
+		else:
+			facing = turn_right(facing)
+
+		if get_entity_type() == Entities.Treasure:
+			harvest()
+			return
+
+		steps += 1
+
+def move_towards_treasure(max_steps, starting_gold):
+	tiles = {}
 	path = []
-	visited.append((get_pos_x(), get_pos_y()))
 
 	steps = 0
 	while steps < max_steps and num_items(Items.Gold) == starting_gold:
 		x = get_pos_x()
 		y = get_pos_y()
+		pos = (x, y)
 
-		if use_random:
-			directions = shuffled_directions()
+		if get_entity_type() == Entities.Treasure:
+			harvest()
+			return
+
+		walls = {
+			North: not can_move(North),
+			East: not can_move(East),
+			South: not can_move(South),
+			West: not can_move(West)
+		}
+
+		if pos not in tiles:
+			tiles[pos] = walls
+
+		if len(path) == 0 or path[len(path) - 1] != pos:
+			path.append(pos)
+
+		free_dirs = []
+		for d in [North, East, South, West]:
+			if not walls[d]:
+				dx = 0
+				dy = 0
+				if d == North:
+					dy = 1
+				elif d == South:
+					dy = -1
+				elif d == East:
+					dx = 1
+				elif d == West:
+					dx = -1
+				next_pos = (x + dx, y + dy)
+				if next_pos not in tiles:
+					free_dirs.append(d)
+
+		if len(free_dirs) > 0:
+			move(pick_random(free_dirs))
 		else:
-			directions = tie_order
-
-		moved = False
-		for i in range(4):
-			d = directions[i]
-			if d == North:
-				nx = x
-				ny = y + 1
-			elif d == South:
-				nx = x
-				ny = y - 1
-			elif d == East:
-				nx = x + 1
-				ny = y
-			else:
-				nx = x - 1
-				ny = y
-
-			if not in_list(visited, nx, ny):
-				if move(d):
-					path.append(d)
-					visited.append((nx, ny))
-					moved = True
-					if get_entity_type() == Entities.Treasure:
-						harvest()
-						return
-					break
-
-		if not moved:
-			if len(path) == 0:
+			if len(path) <= 1:
 				return
-			last = path.pop(len(path) - 1)
-			move(opposite_direction(last))
+			path.pop()
+			px, py = path[len(path) - 1]
+			if px > x:
+				move(East)
+			elif px < x:
+				move(West)
+			elif py > y:
+				move(North)
+			elif py < y:
+				move(South)
 
 		steps += 1
 
-orders = []
-orders.append([North, East, South, West])
-orders.append([East, South, West, North])
-orders.append([South, West, North, East])
-orders.append([West, North, East, South])
+def create_maze():
+	clear()
+	plant(Entities.Bush)
+
+	while get_entity_type() == Entities.Bush:
+		substance = get_world_size() * 2 ** (num_unlocked(Unlocks.Mazes) - 1)
+		if num_items(Items.Weird_Substance) >= substance:
+			use_item(Items.Weird_Substance, substance)
+			return True
+		if can_harvest():
+			harvest()
+			plant(Entities.Bush)
+		if num_items(Items.Fertilizer) == 0:
+			return False
+		use_item(Items.Fertilizer)
 
 while True:
+	if not create_maze():
+		continue
+
 	size = get_world_size()
-
-	multiplier = 1
-	level = num_unlocked(Unlocks.Mazes)
-	for i in range(level - 1):
-		multiplier = multiplier * 2
-	maze_size = size * multiplier
-
-	while num_items(Items.Weird_Substance) < maze_size:
-		pass
-
-	clear()
-	if get_entity_type() != Entities.Bush:
-		plant(Entities.Bush)
-	use_item(Items.Weird_Substance, maze_size)
-
 	max_steps = size * size * 8
 	starting_gold = num_items(Items.Gold)
 
@@ -103,16 +150,15 @@ while True:
 
 	helpers = []
 	for i in range(1, count):
-		if i < 4:
-			order = orders[i]
-			use_random = False
+		if i == 1:
+			helper = spawn_drone(wall_follow_right, max_steps, starting_gold)
+		elif i == 2:
+			helper = spawn_drone(wall_follow_left, max_steps, starting_gold)
 		else:
-			order = orders[0]
-			use_random = True
-		helper = spawn_drone(solve_maze, order, use_random, max_steps, starting_gold)
+			helper = spawn_drone(move_towards_treasure, max_steps, starting_gold)
 		helpers.append(helper)
 
-	solve_maze(orders[0], False, max_steps, starting_gold)
+	move_towards_treasure(max_steps, starting_gold)
 
 	for i in range(len(helpers)):
 		h = helpers[i]
