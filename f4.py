@@ -14,7 +14,40 @@ def opposite_direction(direction):
 		return West
 	return East
 
-def solve_maze(directions, max_steps, starting_gold):
+def ranked_directions(tie_order, target_x, target_y):
+	x = get_pos_x()
+	y = get_pos_y()
+
+	candidates = []
+	for i in range(4):
+		d = tie_order[i]
+		if d == North:
+			nx = x
+			ny = y + 1
+		elif d == South:
+			nx = x
+			ny = y - 1
+		elif d == East:
+			nx = x + 1
+			ny = y
+		else:
+			nx = x - 1
+			ny = y
+		dist = abs(nx - target_x) + abs(ny - target_y)
+		candidates.append((dist, d))
+
+	ranked = []
+	while len(candidates) > 0:
+		best_index = 0
+		for i in range(1, len(candidates)):
+			if candidates[i][0] < candidates[best_index][0]:
+				best_index = i
+		dist, d = candidates.pop(best_index)
+		ranked.append(d)
+
+	return ranked
+
+def solve_maze(tie_order, max_steps, starting_gold, target_x, target_y):
 	visited = []
 	path = []
 	visited.append((get_pos_x(), get_pos_y()))
@@ -23,6 +56,7 @@ def solve_maze(directions, max_steps, starting_gold):
 	while steps < max_steps and num_items(Items.Gold) == starting_gold:
 		x = get_pos_x()
 		y = get_pos_y()
+		directions = ranked_directions(tie_order, target_x, target_y)
 
 		moved = False
 		for i in range(4):
@@ -81,6 +115,8 @@ while True:
 		plant(Entities.Bush)
 	use_item(Items.Weird_Substance, maze_size)
 
+	target_x, target_y = measure()
+
 	max_steps = size * size * 8
 	starting_gold = num_items(Items.Gold)
 
@@ -91,10 +127,10 @@ while True:
 	helpers = []
 	for i in range(1, count):
 		order = orders[i % 4]
-		helper = spawn_drone(solve_maze, order, max_steps, starting_gold)
+		helper = spawn_drone(solve_maze, order, max_steps, starting_gold, target_x, target_y)
 		helpers.append(helper)
 
-	solve_maze(orders[0], max_steps, starting_gold)
+	solve_maze(orders[0], max_steps, starting_gold, target_x, target_y)
 
 	for i in range(len(helpers)):
 		h = helpers[i]
