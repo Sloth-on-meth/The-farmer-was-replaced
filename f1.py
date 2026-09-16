@@ -19,6 +19,30 @@ def water_tile():
 	if get_water() < 0.2:
 		if num_items(Items.Water) > 0:
 			use_item(Items.Water)
+	if get_entity_type() != None and not can_harvest() and num_items(Items.Fertilizer) > 0:
+		use_item(Items.Fertilizer)
+
+def grow(entity):
+	if can_harvest():
+		harvest()
+	if get_ground_type() == Grounds.Grassland:
+		till()
+	if get_entity_type() == None:
+		plant(entity)
+
+def farm_tile(row, col):
+	if row % 2 == 0 and col % 2 == 0:
+		grow(Entities.Tree)
+	elif row % 2 == 1 and col % 2 == 1:
+		grow(Entities.Carrot)
+	elif row % 2 == 0:
+		grow(Entities.Bush)
+	else:
+		if can_harvest():
+			harvest()
+
+def all_stocked():
+	return num_items(Items.Wood) >= 100000 and num_items(Items.Hay) >= 100000 and num_items(Items.Carrot) >= 100000
 
 def check_pumpkin_tile():
 	global pumpkin_ready
@@ -57,7 +81,7 @@ while True:
 	while get_pos_y() < size - 1:
 		move(North)
 
-	pumpkin_active = num_items(Items.Carrot) >= 50
+	pumpkin_active = all_stocked()
 	pumpkin_ready = True
 
 	for row in range(size):
@@ -76,12 +100,7 @@ while True:
 			if pumpkin_active:
 				check_pumpkin_tile()
 			else:
-				if can_harvest():
-					harvest()
-				if get_ground_type() == Grounds.Grassland:
-					till()
-				if get_entity_type() == None:
-					plant(Entities.Carrot)
+				farm_tile(row, col)
 
 			streak += 1
 
