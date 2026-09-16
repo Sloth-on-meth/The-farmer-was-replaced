@@ -79,7 +79,7 @@ while True:
 				
 				if can_harvest():
 					harvest()
-					water_tile()
+					
 				if get_ground_type() == Grounds.Grassland:
 					till()
 				if get_entity_type() == None:
@@ -91,7 +91,7 @@ while True:
 				lookback = min(10, col)
 				for i in range(lookback):
 					move(backward)
-					water_tile()
+					#water_tile()
 					check_pumpkin_tile()
 				for i in range(lookback):
 					move(forward)
