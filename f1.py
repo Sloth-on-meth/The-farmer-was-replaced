@@ -103,7 +103,6 @@ def cactus_tile():
 	harvest()
 
 def check_pumpkin_tile():
-	global pumpkin_ready
 	x = get_pos_x()
 	y = get_pos_y()
 	if in_list(good, x, y):
@@ -116,7 +115,6 @@ def check_pumpkin_tile():
 			if in_list(watch, x, y):
 				watch.remove((x, y))
 		else:
-			pumpkin_ready = False
 			if not in_list(watch, x, y):
 				watch.append((x, y))
 	else:
@@ -124,7 +122,6 @@ def check_pumpkin_tile():
 		if get_ground_type() == Grounds.Grassland:
 			till()
 		plant(Entities.Pumpkin)
-		pumpkin_ready = False
 		if not in_list(watch, x, y):
 			watch.append((x, y))
 
@@ -152,19 +149,15 @@ def dispatch_tile():
 			if get_ground_type() == Grounds.Soil:
 				till()
 
-good = []
-watch = []
-companion_requests = []
-
-while True:
-	size = get_world_size()
-
-	while get_pos_x() > 0:
+def farm_pass(start_x, end_x):
+	while get_pos_x() < start_x:
+		move(East)
+	while get_pos_x() > start_x:
 		move(West)
 	while get_pos_y() < size - 1:
 		move(North)
 
-	pumpkin_ready = True
+	width = end_x - start_x + 1
 
 	for row in range(size):
 		if row % 2 == 0:
@@ -176,7 +169,7 @@ while True:
 
 		streak = 0
 
-		for col in range(size):
+		for col in range(width):
 			water_tile()
 			dispatch_tile()
 			streak += 1
@@ -202,14 +195,36 @@ while True:
 
 				streak = 0
 
-			if col < size - 1:
+			if col < width - 1:
 				move(forward)
 
 		if row < size - 1:
 			move(South)
 
-	if pumpkin_ready and len(good) > 0:
-		move_to(size - 1, get_pos_y())
+	if end_x >= size - 4 and len(watch) == 0 and len(good) > 0:
+		move_to(end_x, get_pos_y())
 		harvest()
+		return True
+	return False
+
+good = []
+watch = []
+companion_requests = []
+
+while True:
+	size = get_world_size()
+
+	mid = size // 2
+	harvested_here = False
+	harvested_helper = False
+	if max_drones() > 1:
+		helper = spawn_drone(farm_pass, mid, size - 1)
+		harvested_here = farm_pass(0, mid - 1)
+		if helper != None:
+			harvested_helper = wait_for(helper)
+	else:
+		harvested_here = farm_pass(0, size - 1)
+
+	if harvested_here or harvested_helper:
 		good = []
 		watch = []
