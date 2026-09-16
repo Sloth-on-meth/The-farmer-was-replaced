@@ -22,6 +22,13 @@ def water_tile():
 	if get_entity_type() != None and not can_harvest() and num_items(Items.Fertilizer) > 0:
 		use_item(Items.Fertilizer)
 
+def has_companion_request(x, y):
+	for i in range(len(companion_requests)):
+		rx, ry, re = companion_requests[i]
+		if rx == x and ry == y:
+			return True
+	return False
+
 def record_companion():
 	if len(companion_requests) >= 50:
 		return
@@ -32,7 +39,7 @@ def record_companion():
 	cx, cy = comp_pos
 	if cx < 0 or cx >= size or cy < 0 or cy >= size:
 		return
-	if not in_list(companion_requests, cx, cy):
+	if not has_companion_request(cx, cy):
 		companion_requests.append((cx, cy, comp_entity))
 
 def take_companion_request(x, y):
