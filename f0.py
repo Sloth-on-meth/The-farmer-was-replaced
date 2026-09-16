@@ -59,7 +59,7 @@ def farm_tile(row, col):
 	elif row % 2 == 1 and col % 2 == 1:
 		grow(Entities.Carrot)
 	elif row % 2 == 0:
-		grow(Entities.Bush)
+		grow(Entities.Grass)
 	else:
 		if can_harvest():
 			harvest()

@@ -22,6 +22,27 @@ def water_tile():
 	if get_entity_type() != None and not can_harvest() and num_items(Items.Fertilizer) > 0:
 		use_item(Items.Fertilizer)
 
+def record_companion():
+	if len(companion_requests) >= 50:
+		return
+	info = get_companion()
+	if info == None:
+		return
+	comp_entity, comp_pos = info
+	cx, cy = comp_pos
+	if cx < 0 or cx >= size or cy < 0 or cy >= size:
+		return
+	if not in_list(companion_requests, cx, cy):
+		companion_requests.append((cx, cy, comp_entity))
+
+def take_companion_request(x, y):
+	for i in range(len(companion_requests)):
+		rx, ry, re = companion_requests[i]
+		if rx == x and ry == y:
+			companion_requests.pop(i)
+			return re
+	return None
+
 def grow(entity):
 	if can_harvest():
 		harvest()
@@ -29,24 +50,50 @@ def grow(entity):
 		till()
 	if get_entity_type() == None:
 		plant(entity)
+	if get_entity_type() != None:
+		record_companion()
 
-def farm_tile():
+def cactus_tile():
 	x = get_pos_x()
 	y = get_pos_y()
-	if x % 2 == 0 and y % 2 == 0:
-		grow(Entities.Tree)
-	elif x % 2 == 1 and y % 2 == 1:
-		grow(Entities.Carrot)
-	elif x % 2 == 0:
-		grow(Entities.Bush)
-	else:
-		if can_harvest():
-			harvest()
-		if get_ground_type() == Grounds.Soil:
-			till()
 
-def all_stocked():
-	return num_items(Items.Wood) >= 100000 and num_items(Items.Hay) >= 100000 and num_items(Items.Carrot) >= 100000
+	if get_entity_type() != Entities.Cactus:
+		if get_ground_type() == Grounds.Grassland:
+			till()
+		plant(Entities.Cactus)
+		return
+
+	record_companion()
+
+	if not can_harvest():
+		return
+
+	value = measure()
+	if value == None:
+		return
+
+	if x > 0:
+		other = measure(West)
+		if other != None and value < other:
+			swap(West)
+			return
+	if y > 0:
+		other = measure(South)
+		if other != None and value < other:
+			swap(South)
+			return
+	if x < size - 1:
+		other = measure(East)
+		if other != None and value > other:
+			swap(East)
+			return
+	if y < size - 1:
+		other = measure(North)
+		if other != None and value > other:
+			swap(North)
+			return
+
+	harvest()
 
 def check_pumpkin_tile():
 	global pumpkin_ready
@@ -74,18 +121,83 @@ def check_pumpkin_tile():
 		if not in_list(watch, x, y):
 			watch.append((x, y))
 
+def dispatch_tile():
+	x = get_pos_x()
+	y = get_pos_y()
+
+	if x < 4:
+		cactus_tile()
+	elif x >= size - 4:
+		check_pumpkin_tile()
+	elif x % 2 == 0 and y % 2 == 0:
+		grow(Entities.Tree)
+	elif x % 2 == 1 and y % 2 == 1:
+		grow(Entities.Carrot)
+	elif x % 2 == 0:
+		grow(Entities.Bush)
+	else:
+		requested = take_companion_request(x, y)
+		if requested != None:
+			grow(requested)
+		else:
+			if can_harvest():
+				harvest()
+			if get_ground_type() == Grounds.Soil:
+				till()
+
+def solve_maze():
+	directions = [North, East, South, West]
+	facing = 0
+	while get_entity_type() != Entities.Treasure:
+		right = (facing + 1) % 4
+		if can_move(directions[right]):
+			facing = right
+			move(directions[facing])
+			continue
+		if can_move(directions[facing]):
+			move(directions[facing])
+			continue
+		left = (facing - 1) % 4
+		if can_move(directions[left]):
+			facing = left
+			move(directions[facing])
+			continue
+		facing = (facing + 2) % 4
+		move(directions[facing])
+	harvest()
+
+def run_maze(maze_size):
+	clear()
+	if get_entity_type() != Entities.Bush:
+		plant(Entities.Bush)
+	use_item(Items.Weird_Substance, maze_size)
+	solve_maze()
+
 good = []
 watch = []
+companion_requests = []
 
 while True:
 	size = get_world_size()
+
+	maze_multiplier = 1
+	maze_level = num_unlocked(Unlocks.Mazes)
+	for i in range(maze_level - 1):
+		maze_multiplier = maze_multiplier * 2
+	maze_size = size * maze_multiplier
+
+	if num_items(Items.Weird_Substance) >= maze_size * 5:
+		run_maze(maze_size)
+		good = []
+		watch = []
+		companion_requests = []
+		continue
 
 	while get_pos_x() > 0:
 		move(West)
 	while get_pos_y() < size - 1:
 		move(North)
 
-	pumpkin_active = all_stocked()
 	pumpkin_ready = True
 
 	for row in range(size):
@@ -100,20 +212,15 @@ while True:
 
 		for col in range(size):
 			water_tile()
-
-			if pumpkin_active:
-				check_pumpkin_tile()
-			else:
-				farm_tile()
-
+			dispatch_tile()
 			streak += 1
 
-			if streak == 10 and pumpkin_active:
+			if streak == 10:
 				lookback = min(10, col)
 				for i in range(lookback):
 					move(backward)
 					water_tile()
-					check_pumpkin_tile()
+					dispatch_tile()
 				for i in range(lookback):
 					move(forward)
 
@@ -135,7 +242,8 @@ while True:
 		if row < size - 1:
 			move(South)
 
-	if pumpkin_active and pumpkin_ready:
+	if pumpkin_ready and len(good) > 0:
+		move_to(size - 1, get_pos_y())
 		harvest()
 		good = []
 		watch = []
