@@ -30,16 +30,20 @@ def grow(entity):
 	if get_entity_type() == None:
 		plant(entity)
 
-def farm_tile(row, col):
-	if row % 2 == 0 and col % 2 == 0:
+def farm_tile():
+	x = get_pos_x()
+	y = get_pos_y()
+	if x % 2 == 0 and y % 2 == 0:
 		grow(Entities.Tree)
-	elif row % 2 == 1 and col % 2 == 1:
+	elif x % 2 == 1 and y % 2 == 1:
 		grow(Entities.Carrot)
-	elif row % 2 == 0:
+	elif x % 2 == 0:
 		grow(Entities.Bush)
 	else:
 		if can_harvest():
 			harvest()
+		if get_ground_type() == Grounds.Soil:
+			till()
 
 def all_stocked():
 	return num_items(Items.Wood) >= 100000 and num_items(Items.Hay) >= 100000 and num_items(Items.Carrot) >= 100000
@@ -100,7 +104,7 @@ while True:
 			if pumpkin_active:
 				check_pumpkin_tile()
 			else:
-				farm_tile(row, col)
+				farm_tile()
 
 			streak += 1
 
