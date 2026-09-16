@@ -102,7 +102,7 @@ def cactus_tile():
 
 	harvest()
 
-def check_pumpkin_tile():
+def check_pumpkin_tile(good, watch):
 	x = get_pos_x()
 	y = get_pos_y()
 	if in_list(good, x, y):
@@ -125,14 +125,14 @@ def check_pumpkin_tile():
 		if not in_list(watch, x, y):
 			watch.append((x, y))
 
-def dispatch_tile():
+def dispatch_tile(good, watch):
 	x = get_pos_x()
 	y = get_pos_y()
 
 	if x < 4:
 		cactus_tile()
 	elif x >= size - 4:
-		check_pumpkin_tile()
+		check_pumpkin_tile(good, watch)
 	elif x % 2 == 0 and y % 2 == 0:
 		grow(Entities.Tree)
 	elif x % 2 == 1 and y % 2 == 1:
@@ -149,7 +149,7 @@ def dispatch_tile():
 			if get_ground_type() == Grounds.Soil:
 				till()
 
-def farm_pass(start_x, end_x):
+def farm_pass(start_x, end_x, good, watch):
 	while get_pos_x() < start_x:
 		move(East)
 	while get_pos_x() > start_x:
@@ -171,7 +171,7 @@ def farm_pass(start_x, end_x):
 
 		for col in range(width):
 			water_tile()
-			dispatch_tile()
+			dispatch_tile(good, watch)
 			streak += 1
 
 			if streak == 10:
@@ -179,7 +179,7 @@ def farm_pass(start_x, end_x):
 				for i in range(lookback):
 					move(backward)
 					water_tile()
-					dispatch_tile()
+					dispatch_tile(good, watch)
 				for i in range(lookback):
 					move(forward)
 
@@ -190,7 +190,7 @@ def farm_pass(start_x, end_x):
 					wx, wy = watch_copy[i]
 					move_to(wx, wy)
 					water_tile()
-					check_pumpkin_tile()
+					check_pumpkin_tile(good, watch)
 				move_to(return_x, return_y)
 
 				streak = 0
@@ -201,33 +201,66 @@ def farm_pass(start_x, end_x):
 		if row < size - 1:
 			move(South)
 
+	harvested = False
 	if end_x >= size - 4 and len(watch) == 0 and len(good) > 0:
 		move_to(end_x, get_pos_y())
 		harvest()
-		return True
-	return False
+		good = []
+		watch = []
+		harvested = True
 
-def solve_maze(max_steps, hand):
-	directions = [North, East, South, West]
-	other_hand = 4 - hand
-	facing = 0
+	return good, watch, harvested
+
+def opposite_direction(direction):
+	if direction == North:
+		return South
+	if direction == South:
+		return North
+	if direction == East:
+		return West
+	return East
+
+def solve_maze(max_steps, directions):
+	visited = []
+	path = []
+	visited.append((get_pos_x(), get_pos_y()))
+
 	steps = 0
 	while get_entity_type() != Entities.Treasure and steps < max_steps:
-		side = (facing + hand) % 4
-		if can_move(directions[side]):
-			facing = side
-			move(directions[facing])
-		elif can_move(directions[facing]):
-			move(directions[facing])
-		else:
-			back_side = (facing + other_hand) % 4
-			if can_move(directions[back_side]):
-				facing = back_side
-				move(directions[facing])
+		x = get_pos_x()
+		y = get_pos_y()
+
+		next_dir = None
+		for i in range(4):
+			d = directions[i]
+			if d == North:
+				nx = x
+				ny = y + 1
+			elif d == South:
+				nx = x
+				ny = y - 1
+			elif d == East:
+				nx = x + 1
+				ny = y
 			else:
-				facing = (facing + 2) % 4
-				move(directions[facing])
+				nx = x - 1
+				ny = y
+
+			if next_dir == None and not in_list(visited, nx, ny) and can_move(d):
+				next_dir = d
+
+		if next_dir != None:
+			move(next_dir)
+			path.append(next_dir)
+			visited.append((get_pos_x(), get_pos_y()))
+		else:
+			if len(path) == 0:
+				return
+			last = path.pop(len(path) - 1)
+			move(opposite_direction(last))
+
 		steps += 1
+
 	if get_entity_type() == Entities.Treasure:
 		harvest()
 
@@ -237,47 +270,85 @@ def run_maze(maze_size):
 		plant(Entities.Bush)
 	use_item(Items.Weird_Substance, maze_size)
 
-	max_steps = size * size * 4
+	max_steps = size * size * 8
 
-	if max_drones() > 1:
-		helper = spawn_drone(solve_maze, max_steps, 3)
-		solve_maze(max_steps, 1)
-		if helper != None:
-			wait_for(helper)
-	else:
-		solve_maze(max_steps, 1)
+	orders = []
+	orders.append([North, East, South, West])
+	orders.append([East, South, West, North])
+	orders.append([South, West, North, East])
+	orders.append([West, North, East, South])
 
-good = []
-watch = []
+	count = max_drones()
+	if count < 1:
+		count = 1
+
+	helpers = []
+	for i in range(1, count):
+		order = orders[i % 4]
+		helper = spawn_drone(solve_maze, max_steps, order)
+		helpers.append(helper)
+
+	solve_maze(max_steps, orders[0])
+
+	for i in range(len(helpers)):
+		h = helpers[i]
+		if h != None:
+			wait_for(h)
+
+	clear()
+
 companion_requests = []
+pumpkin_good = []
+pumpkin_watch = []
 
 while True:
 	size = get_world_size()
 
-	maze_multiplier = 1
-	maze_level = num_unlocked(Unlocks.Mazes)
-	for i in range(maze_level - 1):
-		maze_multiplier = maze_multiplier * 2
-	maze_size = size * maze_multiplier
+	count = max_drones()
+	if count < 1:
+		count = 1
+	if count > size:
+		count = size
 
-	if num_items(Items.Weird_Substance) >= maze_size * 5:
-		run_maze(maze_size)
-		good = []
-		watch = []
-		companion_requests = []
-		continue
+	chunk_size = size // count
+	ranges = []
+	start = 0
+	for i in range(count):
+		end = start + chunk_size - 1
+		if i == count - 1:
+			end = size - 1
+		ranges.append((start, end))
+		start = end + 1
 
-	mid = size // 2
-	harvested_here = False
-	harvested_helper = False
-	if max_drones() > 1:
-		helper = spawn_drone(farm_pass, mid, size - 1)
-		harvested_here = farm_pass(0, mid - 1)
-		if helper != None:
-			harvested_helper = wait_for(helper)
+	helpers = []
+	for i in range(1, count):
+		rs, re = ranges[i]
+		if i == count - 1:
+			helper = spawn_drone(farm_pass, rs, re, pumpkin_good, pumpkin_watch)
+		else:
+			helper = spawn_drone(farm_pass, rs, re, [], [])
+		helpers.append(helper)
+
+	primary_start, primary_end = ranges[0]
+	if count == 1:
+		primary_good, primary_watch, harvested = farm_pass(primary_start, primary_end, pumpkin_good, pumpkin_watch)
 	else:
-		harvested_here = farm_pass(0, size - 1)
+		primary_good, primary_watch, harvested = farm_pass(primary_start, primary_end, [], [])
 
-	if harvested_here or harvested_helper:
-		good = []
-		watch = []
+	for i in range(len(helpers)):
+		h = helpers[i]
+		if h != None:
+			h_good, h_watch, h_harvested = wait_for(h)
+			if i == len(helpers) - 1:
+				pumpkin_good = h_good
+				pumpkin_watch = h_watch
+			if h_harvested:
+				harvested = True
+
+	if count == 1:
+		pumpkin_good = primary_good
+		pumpkin_watch = primary_watch
+
+	if harvested:
+		pumpkin_good = []
+		pumpkin_watch = []
