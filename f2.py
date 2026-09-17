@@ -96,12 +96,14 @@ while True:
 		count = size
 
 	chunk_size = size // count
+	remainder = size % count
 	ranges = []
 	start = 0
 	for i in range(count):
-		end = start + chunk_size - 1
-		if i == count - 1:
-			end = size - 1
+		width = chunk_size
+		if i < remainder:
+			width += 1
+		end = start + width - 1
 		ranges.append((start, end))
 		start = end + 1
 
