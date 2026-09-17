@@ -1,15 +1,5 @@
-def move_to(x, y):
-	while get_pos_x() < x:
-		move(East)
-	while get_pos_x() > x:
-		move(West)
-	while get_pos_y() < y:
-		move(North)
-	while get_pos_y() > y:
-		move(South)
-
 def water_tile():
-	if get_water() < 0.6:
+	if get_water() < 0.1:
 		if num_items(Items.Water) > 0:
 			use_item(Items.Water)
 
@@ -33,14 +23,15 @@ def plant_pass(start_x, end_x):
 		for col in range(width):
 			water_tile()
 			entity = get_entity_type()
-			if entity == None:
+			if entity == Entities.Pumpkin:
+				if not can_harvest():
+					done = False
+			else:
+				harvest()
 				if get_ground_type() == Grounds.Grassland:
 					till()
 				plant(Entities.Pumpkin)
 				done = False
-			elif entity == Entities.Pumpkin:
-				if not can_harvest():
-					done = False
 			if col < width - 1:
 				move(forward)
 
@@ -181,5 +172,4 @@ while True:
 
 		round_clean = all_mature and all_clean
 
-	move_to(0, 0)
 	harvest()
