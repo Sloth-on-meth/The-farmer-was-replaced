@@ -33,7 +33,8 @@ def grass_range(start_x, end_x, reverse):
 		width = end_x - start_x + 1
 
 		for row in range(size):
-			change_hat(parade_hats[row % len(parade_hats)])
+			if row % 10 == 0:
+				change_hat(parade_hats[(row // 10) % len(parade_hats)])
 
 			if reverse:
 				if row % 2 == 0:
@@ -82,7 +83,7 @@ for i in range(count):
 
 for i in range(1, count):
 	s, e = ranges[i]
-	spawn_drone(grass_range, s, e)
+	spawn_drone(grass_range, s, e, i % 2 == 1)
 
 s0, e0 = ranges[0]
-grass_range(s0, e0)
+grass_range(s0, e0, False)
