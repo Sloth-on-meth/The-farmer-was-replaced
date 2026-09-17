@@ -32,8 +32,10 @@ def water_tile():
 		if num_items(Items.Water) > 0:
 			use_item(Items.Water)
 
-def plant_column():
+def plant_column(x):
 	global world_size
+	move_to_x(x)
+	move_to_y(0)
 	for i in range(world_size):
 		water_tile()
 		if get_ground_type() == Grounds.Grassland:
@@ -43,23 +45,20 @@ def plant_column():
 
 def plant_columns():
 	global world_size
-	move_to_x(0)
-	move_to_y(0)
 	drones = []
 	for x in range(world_size):
-		if x > 0:
-			move_to_x(x)
-			move_to_y(0)
-		drone = spawn_drone(plant_column)
+		drone = spawn_drone(plant_column, x)
 		if drone != None:
 			drones.append(drone)
 		else:
-			plant_column()
+			plant_column(x)
 	for drone in drones:
 		wait_for(drone)
 
-def sort_column():
+def sort_column(x):
 	global world_size
+	move_to_x(x)
+	move_to_y(0)
 	changed = False
 	for i in range(world_size - 1):
 		water_tile()
@@ -73,27 +72,24 @@ def sort_column():
 
 def sort_columns():
 	global world_size
-	move_to_x(0)
-	move_to_y(0)
 	drones = []
 	changed = False
 	for x in range(world_size):
-		if x > 0:
-			move_to_x(x)
-			move_to_y(0)
-		drone = spawn_drone(sort_column)
+		drone = spawn_drone(sort_column, x)
 		if drone != None:
 			drones.append(drone)
 		else:
-			if sort_column():
+			if sort_column(x):
 				changed = True
 	for drone in drones:
 		if wait_for(drone):
 			changed = True
 	return changed
 
-def sort_row():
+def sort_row(y):
 	global world_size
+	move_to_y(y)
+	move_to_x(0)
 	changed = False
 	for i in range(world_size - 1):
 		water_tile()
@@ -107,19 +103,14 @@ def sort_row():
 
 def sort_rows():
 	global world_size
-	move_to_x(0)
-	move_to_y(0)
 	drones = []
 	changed = False
 	for y in range(world_size):
-		if y > 0:
-			move_to_y(y)
-			move_to_x(0)
-		drone = spawn_drone(sort_row)
+		drone = spawn_drone(sort_row, y)
 		if drone != None:
 			drones.append(drone)
 		else:
-			if sort_row():
+			if sort_row(y):
 				changed = True
 	for drone in drones:
 		if wait_for(drone):
