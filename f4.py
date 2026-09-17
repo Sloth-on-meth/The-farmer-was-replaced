@@ -1,3 +1,5 @@
+########maze
+
 def turn_left(direction):
 	if direction == North:
 		return West
