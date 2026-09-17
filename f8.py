@@ -1,5 +1,14 @@
 print("Starting grass farm program f8")
 
+candidate_hats = [Hats.Traffic_Cone, Hats.Wizard_Hat, Hats.Top_Hat, Hats.Traffic_Cone_Stack, Hats.The_Farmers_Remains, Hats.Golden_Sunflower_Hat, Hats.Straw_Hat, Hats.Green_Hat, Hats.Purple_Hat, Hats.Gray_Hat, Hats.Brown_Hat]
+
+parade_hats = []
+for h in candidate_hats:
+	if num_unlocked(h) > 0:
+		parade_hats.append(h)
+if len(parade_hats) == 0:
+	parade_hats.append(Hats.Straw_Hat)
+
 def water_tile():
 	if get_water() < 0.2:
 		if num_items(Items.Water) > 0:
@@ -20,6 +29,8 @@ def grass_range(start_x, end_x):
 		width = end_x - start_x + 1
 
 		for row in range(size):
+			change_hat(parade_hats[row % len(parade_hats)])
+
 			if row % 2 == 0:
 				forward = East
 			else:
