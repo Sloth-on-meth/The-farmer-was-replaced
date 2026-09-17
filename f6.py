@@ -58,16 +58,43 @@ def plant_columns():
 def sort_column(x):
 	global world_size
 	move_to_x(x)
-	move_to_y(0)
 	changed = False
-	for i in range(world_size - 1):
-		water_tile()
-		current = measure()
-		above = measure(North)
-		if above != None and current > above:
-			swap(North)
-			changed = True
-		move(North)
+	low = 0
+	high = world_size - 1
+
+	while low < high:
+		move_to_y(low)
+		last_swap = low
+		y_curr = low
+		while y_curr < high:
+			water_tile()
+			current = measure()
+			above = measure(North)
+			if above != None and current > above:
+				swap(North)
+				changed = True
+				last_swap = y_curr
+			move(North)
+			y_curr += 1
+		high = last_swap
+		if low >= high:
+			break
+
+		move_to_y(high)
+		last_swap = high
+		y_curr = high
+		while y_curr > low:
+			water_tile()
+			current = measure()
+			below = measure(South)
+			if below != None and below > current:
+				swap(South)
+				changed = True
+				last_swap = y_curr
+			move(South)
+			y_curr -= 1
+		low = last_swap
+
 	return changed
 
 def sort_columns():
@@ -89,16 +116,43 @@ def sort_columns():
 def sort_row(y):
 	global world_size
 	move_to_y(y)
-	move_to_x(0)
 	changed = False
-	for i in range(world_size - 1):
-		water_tile()
-		current = measure()
-		right = measure(East)
-		if right != None and current > right:
-			swap(East)
-			changed = True
-		move(East)
+	left = 0
+	right = world_size - 1
+
+	while left < right:
+		move_to_x(left)
+		last_swap = left
+		x_curr = left
+		while x_curr < right:
+			water_tile()
+			current = measure()
+			east = measure(East)
+			if east != None and current > east:
+				swap(East)
+				changed = True
+				last_swap = x_curr
+			move(East)
+			x_curr += 1
+		right = last_swap
+		if left >= right:
+			break
+
+		move_to_x(right)
+		last_swap = right
+		x_curr = right
+		while x_curr > left:
+			water_tile()
+			current = measure()
+			west = measure(West)
+			if west != None and west > current:
+				swap(West)
+				changed = True
+				last_swap = x_curr
+			move(West)
+			x_curr -= 1
+		left = last_swap
+
 	return changed
 
 def sort_rows():
