@@ -1,5 +1,10 @@
 quick_print("Starting sunflower farm program f5")
 
+def water_tile():
+	if get_water() < 0.2:
+		if num_items(Items.Water) > 0:
+			use_item(Items.Water)
+
 def sunflower_loop(start_x, end_x):
 	while True:
 		size = get_world_size()
@@ -20,6 +25,7 @@ def sunflower_loop(start_x, end_x):
 				forward = West
 
 			for col in range(width):
+				water_tile()
 				if can_harvest():
 					harvest()
 				if get_ground_type() == Grounds.Grassland:

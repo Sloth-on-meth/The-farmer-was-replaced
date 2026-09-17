@@ -60,6 +60,7 @@ def search_pass(start_x, end_x):
 			forward = West
 
 		for col in range(width):
+			water_tile()
 			if get_entity_type() == Entities.Dead_Pumpkin:
 				harvest()
 				if get_ground_type() == Grounds.Grassland:

@@ -9,6 +9,11 @@ def wear_grow_hat():
 def wear_harvest_hat():
 	change_hat(Hats.Wizard_Hat)
 
+def water_tile():
+	if get_water() < 0.2:
+		if num_items(Items.Water) > 0:
+			use_item(Items.Water)
+
 def carrot_range(start_x, end_x):
 	size = get_world_size()
 	while True:
@@ -28,6 +33,7 @@ def carrot_range(start_x, end_x):
 				forward = West
 
 			for col in range(width):
+				water_tile()
 				if can_harvest():
 					wear_harvest_hat()
 					harvest()

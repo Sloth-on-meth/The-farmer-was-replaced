@@ -1,5 +1,5 @@
 quick_print("Starting cactus farm program f6")
-clear()
+#clear()
 world_size = get_world_size()
 
 def _shortest_delta(curr, dest):
@@ -27,9 +27,15 @@ def move_to_y(y_target):
 	for i in range(abs(d)):
 		move(dir)
 
+def water_tile():
+	if get_water() < 0.2:
+		if num_items(Items.Water) > 0:
+			use_item(Items.Water)
+
 def plant_column():
 	global world_size
 	for i in range(world_size):
+		water_tile()
 		if get_ground_type() == Grounds.Grassland:
 			till()
 		plant(Entities.Cactus)
@@ -56,6 +62,7 @@ def sort_column():
 	global world_size
 	changed = False
 	for i in range(world_size - 1):
+		water_tile()
 		current = measure()
 		above = measure(North)
 		if above != None and current > above:
@@ -89,6 +96,7 @@ def sort_row():
 	global world_size
 	changed = False
 	for i in range(world_size - 1):
+		water_tile()
 		current = measure()
 		right = measure(East)
 		if right != None and current > right:
