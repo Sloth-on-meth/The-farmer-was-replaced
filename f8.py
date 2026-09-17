@@ -16,25 +16,35 @@ def water_tile():
 	if get_entity_type() != None and not can_harvest() and num_items(Items.Fertilizer) > 0:
 		use_item(Items.Fertilizer)
 
-def grass_range(start_x, end_x):
+def grass_range(start_x, end_x, reverse):
 	size = get_world_size()
 	while True:
 		while get_pos_x() < start_x:
 			move(East)
 		while get_pos_x() > start_x:
 			move(West)
-		while get_pos_y() > 0:
-			move(South)
+		if reverse:
+			while get_pos_y() < size - 1:
+				move(North)
+		else:
+			while get_pos_y() > 0:
+				move(South)
 
 		width = end_x - start_x + 1
 
 		for row in range(size):
 			change_hat(parade_hats[row % len(parade_hats)])
 
-			if row % 2 == 0:
-				forward = East
+			if reverse:
+				if row % 2 == 0:
+					forward = West
+				else:
+					forward = East
 			else:
-				forward = West
+				if row % 2 == 0:
+					forward = East
+				else:
+					forward = West
 
 			for col in range(width):
 				water_tile()
@@ -46,7 +56,10 @@ def grass_range(start_x, end_x):
 					move(forward)
 
 			if row < size - 1:
-				move(North)
+				if reverse:
+					move(South)
+				else:
+					move(North)
 
 size = get_world_size()
 count = max_drones()
