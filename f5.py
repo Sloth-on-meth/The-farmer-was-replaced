@@ -1,97 +1,57 @@
-def sunflower_pass(start_x, end_x):
-	while get_pos_x() < start_x:
-		move(East)
-	while get_pos_x() > start_x:
-		move(West)
-	while get_pos_y() < size - 1:
-		move(North)
+def sunflower_loop(start_x, end_x):
+	while True:
+		size = get_world_size()
 
-	width = end_x - start_x + 1
+		while get_pos_x() < start_x:
+			move(East)
+		while get_pos_x() > start_x:
+			move(West)
+		while get_pos_y() < size - 1:
+			move(North)
 
-	for row in range(size):
-		if row % 2 == 0:
-			forward = East
-		else:
-			forward = West
+		width = end_x - start_x + 1
 
-		for col in range(width):
-			if can_harvest():
-				harvest()
-			if get_ground_type() == Grounds.Grassland:
-				till()
-			if get_entity_type() == None:
-				plant(Entities.Sunflower)
-			if col < width - 1:
-				move(forward)
+		for row in range(size):
+			if row % 2 == 0:
+				forward = East
+			else:
+				forward = West
 
-		if row < size - 1:
-			move(South)
+			for col in range(width):
+				if can_harvest():
+					harvest()
+				if get_ground_type() == Grounds.Grassland:
+					till()
+				if get_entity_type() == None:
+					plant(Entities.Sunflower)
+				if col < width - 1:
+					move(forward)
 
-	return True
+			if row < size - 1:
+				move(South)
 
-while True:
-	size = get_world_size()
-	count = max_drones()
-	if count < 1:
-		count = 1
+size = get_world_size()
+count = max_drones()
+if count < 1:
+	count = 1
 
-	job_count = count * 3
-	if job_count < 1:
-		job_count = 1
-	if job_count > size:
-		job_count = size
+ranges = []
+chunk = size // count
+rem = size % count
+start = 0
+for i in range(count):
+	w = chunk
+	if i < rem:
+		w += 1
+	if w < 1:
+		w = 1
+	end = start + w - 1
+	ranges.append((start, end))
+	start = end + 1
 
-	ranges = []
-	chunk = size // job_count
-	rem = size % job_count
-	start = 0
-	for i in range(job_count):
-		w = chunk
-		if i < rem:
-			w += 1
-		if w < 1:
-			w = 1
-		end = start + w - 1
-		ranges.append((start, end))
-		start = end + 1
+for i in range(1, count):
+	s, e = ranges[i]
+	spawn_drone(sunflower_loop, s, e)
 
-	worker_count = count - 1
-	if worker_count < 0:
-		worker_count = 0
-
-	next_job = 0
-
-	primary_job = None
-	if next_job < len(ranges):
-		primary_job = ranges[next_job]
-		next_job += 1
-
-	slots = []
-	for i in range(worker_count):
-		slots.append(None)
-
-	active_count = 0
-	for i in range(worker_count):
-		if next_job < len(ranges):
-			s, e = ranges[next_job]
-			next_job += 1
-			slots[i] = spawn_drone(sunflower_pass, s, e)
-			if slots[i] != None:
-				active_count += 1
-
-	if primary_job != None:
-		sunflower_pass(primary_job[0], primary_job[1])
-
-	while active_count > 0:
-		for i in range(worker_count):
-			if slots[i] != None and has_finished(slots[i]):
-				wait_for(slots[i])
-				slots[i] = None
-				active_count -= 1
-
-				if next_job < len(ranges):
-					s, e = ranges[next_job]
-					next_job += 1
-					slots[i] = spawn_drone(sunflower_pass, s, e)
-					if slots[i] != None:
-						active_count += 1
+s0, e0 = ranges[0]
+sunflower_loop(s0, e0)
