@@ -1,3 +1,5 @@
+
+
 def turn_left(direction):
 	if direction == North:
 		return West
@@ -50,7 +52,6 @@ def wall_follow_right(max_steps, starting_gold):
 		steps += 1
 
 def explore(max_steps, starting_gold, bias_order):
-	tiles = {}
 	path = []
 
 	steps = 0
@@ -70,8 +71,8 @@ def explore(max_steps, starting_gold, bias_order):
 			West: not can_move(West)
 		}
 
-		if pos not in tiles:
-			tiles[pos] = walls
+		if pos not in visited_tiles:
+			visited_tiles[pos] = walls
 
 		if len(path) == 0 or path[len(path) - 1] != pos:
 			path.append(pos)
@@ -90,7 +91,7 @@ def explore(max_steps, starting_gold, bias_order):
 				elif d == West:
 					dx = -1
 				next_pos = (x + dx, y + dy)
-				if next_pos not in tiles:
+				if next_pos not in visited_tiles:
 					free_dirs.append(d)
 
 		if len(free_dirs) > 0:
@@ -142,9 +143,13 @@ def create_maze():
 			return False
 		use_item(Items.Fertilizer)
 
+visited_tiles = {}
+
 while True:
 	if not create_maze():
 		continue
+
+	visited_tiles = {}
 
 	size = get_world_size()
 	max_steps = size * size * 8

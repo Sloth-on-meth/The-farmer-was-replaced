@@ -1,0 +1,1 @@
+quick_print("67")
