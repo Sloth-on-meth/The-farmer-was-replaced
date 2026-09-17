@@ -13,19 +13,7 @@ def water_tile():
 		if num_items(Items.Water) > 0:
 			use_item(Items.Water)
 
-def check_pumpkin_tile_here():
-	entity = get_entity_type()
-	if entity == Entities.Pumpkin:
-		return not can_harvest()
-	harvest()
-	if get_ground_type() == Grounds.Grassland:
-		till()
-	plant(Entities.Pumpkin)
-	return True
-
-def farm_pass(start_x, end_x):
-	pumpkin_active = num_items(Items.Carrot) >= 50
-
+def plant_pass(start_x, end_x):
 	while get_pos_x() < start_x:
 		move(East)
 	while get_pos_x() > start_x:
@@ -34,31 +22,8 @@ def farm_pass(start_x, end_x):
 		move(North)
 
 	width = end_x - start_x + 1
+	done = True
 
-	if not pumpkin_active:
-		for row in range(size):
-			if row % 2 == 0:
-				forward = East
-			else:
-				forward = West
-
-			for col in range(width):
-				water_tile()
-				if can_harvest():
-					harvest()
-				if get_ground_type() == Grounds.Grassland:
-					till()
-				if get_entity_type() == None:
-					plant(Entities.Carrot)
-				if col < width - 1:
-					move(forward)
-
-			if row < size - 1:
-				move(South)
-
-		return pumpkin_active
-
-	watch = []
 	for row in range(size):
 		if row % 2 == 0:
 			forward = East
@@ -67,59 +32,153 @@ def farm_pass(start_x, end_x):
 
 		for col in range(width):
 			water_tile()
-			if check_pumpkin_tile_here():
-				watch.append((get_pos_x(), get_pos_y()))
+			entity = get_entity_type()
+			if entity == None:
+				if get_ground_type() == Grounds.Grassland:
+					till()
+				plant(Entities.Pumpkin)
+				done = False
+			elif entity == Entities.Pumpkin:
+				if not can_harvest():
+					done = False
 			if col < width - 1:
 				move(forward)
 
 		if row < size - 1:
 			move(South)
 
-	while len(watch) > 0:
-		next_watch = []
-		while len(watch) > 0:
-			x, y = watch.pop()
-			move_to(x, y)
-			water_tile()
-			if check_pumpkin_tile_here():
-				next_watch.append((x, y))
-		watch = next_watch
+	return done
 
-	return pumpkin_active
+def search_pass(start_x, end_x):
+	while get_pos_x() < start_x:
+		move(East)
+	while get_pos_x() > start_x:
+		move(West)
+	while get_pos_y() < size - 1:
+		move(North)
+
+	width = end_x - start_x + 1
+	clean = True
+
+	for row in range(size):
+		if row % 2 == 0:
+			forward = East
+		else:
+			forward = West
+
+		for col in range(width):
+			if get_entity_type() == Entities.Dead_Pumpkin:
+				harvest()
+				if get_ground_type() == Grounds.Grassland:
+					till()
+				plant(Entities.Pumpkin)
+				clean = False
+			if col < width - 1:
+				move(forward)
+
+		if row < size - 1:
+			move(South)
+
+	return clean
 
 while True:
 	size = get_world_size()
 	count = max_drones()
 	if count < 1:
 		count = 1
-	if count > size:
-		count = size
 
-	chunk_size = size // count
-	remainder = size % count
+	min_job_size = 3
+	job_count = size // min_job_size
+	if job_count < 1:
+		job_count = 1
+
 	ranges = []
+	chunk = size // job_count
+	rem = size % job_count
 	start = 0
-	for i in range(count):
-		width = chunk_size
-		if i < remainder:
-			width += 1
-		end = start + width - 1
+	for i in range(job_count):
+		w = chunk
+		if i < rem:
+			w += 1
+		if w < 1:
+			w = 1
+		end = start + w - 1
 		ranges.append((start, end))
 		start = end + 1
 
-	helpers = []
-	for i in range(1, count):
-		rs, re = ranges[i]
-		helper = spawn_drone(farm_pass, rs, re)
-		helpers.append(helper)
+	worker_count = count - 1
+	if worker_count < 0:
+		worker_count = 0
 
-	primary_start, primary_end = ranges[0]
-	pumpkin_active = farm_pass(primary_start, primary_end)
+	round_clean = False
 
-	for i in range(len(helpers)):
-		h = helpers[i]
-		if h != None:
-			wait_for(h)
+	while not round_clean:
+		jobs = []
+		for i in range(len(ranges)):
+			s, e = ranges[i]
+			jobs.append((0, s, e))
+		for i in range(len(ranges)):
+			s, e = ranges[i]
+			jobs.append((1, s, e))
 
-	if pumpkin_active:
-		harvest()
+		all_mature = True
+		all_clean = True
+
+		next_job = 0
+		slots = []
+		slot_types = []
+		for i in range(worker_count):
+			slots.append(None)
+			slot_types.append(-1)
+
+		active_count = 0
+		for i in range(worker_count):
+			if next_job < len(jobs):
+				jtype, a, b = jobs[next_job]
+				next_job += 1
+				slot_types[i] = jtype
+				if jtype == 0:
+					slots[i] = spawn_drone(plant_pass, a, b)
+				else:
+					slots[i] = spawn_drone(search_pass, a, b)
+				if slots[i] != None:
+					active_count += 1
+
+		if next_job < len(jobs):
+			jtype, a, b = jobs[next_job]
+			next_job += 1
+			if jtype == 0:
+				if not plant_pass(a, b):
+					all_mature = False
+			else:
+				if not search_pass(a, b):
+					all_clean = False
+
+		while active_count > 0:
+			for i in range(worker_count):
+				if slots[i] != None and has_finished(slots[i]):
+					result = wait_for(slots[i])
+					if slot_types[i] == 0:
+						if not result:
+							all_mature = False
+					else:
+						if not result:
+							all_clean = False
+					slots[i] = None
+					active_count -= 1
+
+					if next_job < len(jobs):
+						jtype, a, b = jobs[next_job]
+						next_job += 1
+						slot_types[i] = jtype
+						if jtype == 0:
+							slots[i] = spawn_drone(plant_pass, a, b)
+						else:
+							slots[i] = spawn_drone(search_pass, a, b)
+						if slots[i] != None:
+							active_count += 1
+
+		round_clean = all_mature and all_clean
+
+	move_to(0, 0)
+	harvest()
