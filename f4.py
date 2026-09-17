@@ -22,6 +22,16 @@ def pick_random(options):
 	r = random() * len(options) // 1
 	return options[r]
 
+def pick_biased(free_dirs, bias_order):
+	roll = random()
+	if roll < 0.15:
+		return pick_random(free_dirs)
+	for i in range(4):
+		d = bias_order[i]
+		if d in free_dirs:
+			return d
+	return free_dirs[0]
+
 def wall_follow_right(max_steps, starting_gold):
 	facing = North
 	steps = 0
@@ -60,7 +70,7 @@ def wall_follow_left(max_steps, starting_gold):
 
 		steps += 1
 
-def move_towards_treasure(max_steps, starting_gold):
+def move_towards_treasure(max_steps, starting_gold, bias_order):
 	tiles = {}
 	path = []
 
@@ -105,7 +115,7 @@ def move_towards_treasure(max_steps, starting_gold):
 					free_dirs.append(d)
 
 		if len(free_dirs) > 0:
-			move(pick_random(free_dirs))
+			move(pick_biased(free_dirs, bias_order))
 		else:
 			if len(path) <= 1:
 				return
@@ -150,6 +160,12 @@ while True:
 	if count < 1:
 		count = 1
 
+	orders = []
+	orders.append([North, East, South, West])
+	orders.append([East, South, West, North])
+	orders.append([South, West, North, East])
+	orders.append([West, North, East, South])
+
 	helpers = []
 	for i in range(1, count):
 		if i == 1:
@@ -157,10 +173,11 @@ while True:
 		elif i == 2:
 			helper = spawn_drone(wall_follow_left, max_steps, starting_gold)
 		else:
-			helper = spawn_drone(move_towards_treasure, max_steps, starting_gold)
+			order = orders[i % 4]
+			helper = spawn_drone(move_towards_treasure, max_steps, starting_gold, order)
 		helpers.append(helper)
 
-	move_towards_treasure(max_steps, starting_gold)
+	move_towards_treasure(max_steps, starting_gold, orders[0])
 
 	for i in range(len(helpers)):
 		h = helpers[i]
