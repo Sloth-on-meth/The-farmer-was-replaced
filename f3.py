@@ -430,18 +430,26 @@ while True:
 		farm_x_end = farm_x_start
 	farm_width_total = farm_x_end - farm_x_start + 1
 
-	min_job_size = 3
-
-	cactus_job_count = size // min_job_size
+	cactus_job_count = worker_count
 	if cactus_job_count < 1:
 		cactus_job_count = 1
-	pumpkin_job_count = size // min_job_size
+	if cactus_job_count > size:
+		cactus_job_count = size
+	pumpkin_job_count = worker_count
 	if pumpkin_job_count < 1:
 		pumpkin_job_count = 1
-	sunflower_job_count = size // min_job_size
+	if pumpkin_job_count > size:
+		pumpkin_job_count = size
+	sunflower_job_count = worker_count
 	if sunflower_job_count < 1:
 		sunflower_job_count = 1
-	farm_job_count = farm_width_total // min_job_size
+	if sunflower_job_count > size:
+		sunflower_job_count = size
+	farm_job_count = worker_count
+	if farm_job_count < 1:
+		farm_job_count = 1
+	if farm_job_count > farm_width_total:
+		farm_job_count = farm_width_total
 	if farm_job_count < 1:
 		farm_job_count = 1
 

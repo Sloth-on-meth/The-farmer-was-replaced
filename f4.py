@@ -1,5 +1,3 @@
-########maze
-
 def turn_left(direction):
 	if direction == North:
 		return West
@@ -51,26 +49,7 @@ def wall_follow_right(max_steps, starting_gold):
 
 		steps += 1
 
-def wall_follow_left(max_steps, starting_gold):
-	facing = North
-	steps = 0
-	while steps < max_steps and num_items(Items.Gold) == starting_gold:
-		side = turn_left(facing)
-		if can_move(side):
-			facing = side
-			move(facing)
-		elif can_move(facing):
-			move(facing)
-		else:
-			facing = turn_right(facing)
-
-		if get_entity_type() == Entities.Treasure:
-			harvest()
-			return
-
-		steps += 1
-
-def move_towards_treasure(max_steps, starting_gold, bias_order):
+def explore(max_steps, starting_gold, bias_order):
 	tiles = {}
 	path = []
 
@@ -115,7 +94,18 @@ def move_towards_treasure(max_steps, starting_gold, bias_order):
 					free_dirs.append(d)
 
 		if len(free_dirs) > 0:
-			move(pick_biased(free_dirs, bias_order))
+			chosen = pick_biased(free_dirs, bias_order)
+
+			if len(free_dirs) > 1 and num_drones() < max_drones():
+				alt_dirs = []
+				for i in range(len(free_dirs)):
+					if free_dirs[i] != chosen:
+						alt_dirs.append(free_dirs[i])
+				if len(alt_dirs) > 0:
+					fork_dir = pick_random(alt_dirs)
+					spawn_drone(explore_from_fork, max_steps, starting_gold, bias_order, fork_dir)
+
+			move(chosen)
 		else:
 			if len(path) <= 1:
 				return
@@ -131,6 +121,10 @@ def move_towards_treasure(max_steps, starting_gold, bias_order):
 				move(South)
 
 		steps += 1
+
+def explore_from_fork(max_steps, starting_gold, bias_order, first_dir):
+	move(first_dir)
+	explore(max_steps, starting_gold, bias_order)
 
 def create_maze():
 	clear()
@@ -166,22 +160,16 @@ while True:
 	orders.append([South, West, North, East])
 	orders.append([West, North, East, South])
 
-	helpers = []
-	for i in range(1, count):
-		if i == 1:
-			helper = spawn_drone(wall_follow_right, max_steps, starting_gold)
-		elif i == 2:
-			helper = spawn_drone(wall_follow_left, max_steps, starting_gold)
-		else:
-			order = orders[i % 4]
-			helper = spawn_drone(move_towards_treasure, max_steps, starting_gold, order)
-		helpers.append(helper)
+	helper = None
+	if count > 1:
+		helper = spawn_drone(wall_follow_right, max_steps, starting_gold)
 
-	move_towards_treasure(max_steps, starting_gold, orders[0])
+	explore(max_steps, starting_gold, orders[0])
 
-	for i in range(len(helpers)):
-		h = helpers[i]
-		if h != None:
-			wait_for(h)
+	if helper != None:
+		wait_for(helper)
+
+	while num_drones() > 1:
+		pass
 
 	clear()

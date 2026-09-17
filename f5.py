@@ -35,10 +35,11 @@ while True:
 	if count < 1:
 		count = 1
 
-	min_job_size = 3
-	job_count = size // min_job_size
+	job_count = count * 3
 	if job_count < 1:
 		job_count = 1
+	if job_count > size:
+		job_count = size
 
 	ranges = []
 	chunk = size // job_count
