@@ -1,3 +1,5 @@
+quick_print("Starting pumpkin farm program f2")
+
 def water_tile():
 	if get_water() < 0.1:
 		if num_items(Items.Water) > 0:

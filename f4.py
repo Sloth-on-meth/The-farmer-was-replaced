@@ -1,5 +1,7 @@
 
 
+quick_print("Starting maze treasure hunt program f4")
+
 def turn_left(direction):
 	if direction == North:
 		return West

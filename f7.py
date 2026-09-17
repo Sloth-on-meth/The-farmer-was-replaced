@@ -1,15 +1,23 @@
-quick_print("Starting sunflower farm program f5")
+quick_print("Starting carrot program f7")
 
-def sunflower_loop(start_x, end_x):
+def wear_work_hat():
+	change_hat(Hats.Traffic_Cone)
+
+def wear_grow_hat():
+	change_hat(Hats.Carrot_Hat)
+
+def wear_harvest_hat():
+	change_hat(Hats.Wizard_Hat)
+
+def carrot_range(start_x, end_x):
+	size = get_world_size()
 	while True:
-		size = get_world_size()
-
 		while get_pos_x() < start_x:
 			move(East)
 		while get_pos_x() > start_x:
 			move(West)
-		while get_pos_y() < size - 1:
-			move(North)
+		while get_pos_y() > 0:
+			move(South)
 
 		width = end_x - start_x + 1
 
@@ -21,16 +29,19 @@ def sunflower_loop(start_x, end_x):
 
 			for col in range(width):
 				if can_harvest():
+					wear_harvest_hat()
 					harvest()
 				if get_ground_type() == Grounds.Grassland:
+					wear_work_hat()
 					till()
 				if get_entity_type() == None:
-					plant(Entities.Sunflower)
+					wear_grow_hat()
+					plant(Entities.Carrot)
 				if col < width - 1:
 					move(forward)
 
 			if row < size - 1:
-				move(South)
+				move(North)
 
 size = get_world_size()
 count = max_drones()
@@ -53,7 +64,7 @@ for i in range(count):
 
 for i in range(1, count):
 	s, e = ranges[i]
-	spawn_drone(sunflower_loop, s, e)
+	spawn_drone(carrot_range, s, e)
 
 s0, e0 = ranges[0]
-sunflower_loop(s0, e0)
+carrot_range(s0, e0)

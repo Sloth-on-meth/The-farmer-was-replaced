@@ -1,3 +1,5 @@
+quick_print("Starting multi-crop farm program f3")
+
 def move_to(x, y):
 	while get_pos_x() < x:
 		move(East)
