@@ -1,4 +1,4 @@
-quick_print("Starting sunflower farm program f5")
+print("Starting sunflower farm program f5")
 
 def water_tile():
 	if get_water() < 0.2:

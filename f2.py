@@ -1,4 +1,4 @@
-quick_print("Starting pumpkin farm program f2")
+print("Starting pumpkin farm program f2")
 
 def water_tile():
 	if get_water() < 0.1:

@@ -1,4 +1,4 @@
-quick_print("Starting cactus farm program f6")
+print("Starting cactus farm program f6")
 #clear()
 world_size = get_world_size()
 

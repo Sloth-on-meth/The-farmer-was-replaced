@@ -1,20 +1,13 @@
-print("Starting carrot program f7")
-
-def wear_work_hat():
-	change_hat(Hats.Traffic_Cone)
-
-def wear_grow_hat():
-	change_hat(Hats.Carrot_Hat)
-
-def wear_harvest_hat():
-	change_hat(Hats.Wizard_Hat)
+print("Starting grass farm program f8")
 
 def water_tile():
 	if get_water() < 0.2:
 		if num_items(Items.Water) > 0:
 			use_item(Items.Water)
+	if get_entity_type() != None and not can_harvest() and num_items(Items.Fertilizer) > 0:
+		use_item(Items.Fertilizer)
 
-def carrot_range(start_x, end_x):
+def grass_range(start_x, end_x):
 	size = get_world_size()
 	while True:
 		while get_pos_x() < start_x:
@@ -34,15 +27,10 @@ def carrot_range(start_x, end_x):
 
 			for col in range(width):
 				water_tile()
-				if can_harvest():
-					wear_harvest_hat()
-					harvest()
-				if get_ground_type() == Grounds.Grassland:
-					wear_work_hat()
+				if get_ground_type() == Grounds.Soil:
 					till()
-				if get_entity_type() == None:
-					wear_grow_hat()
-					plant(Entities.Carrot)
+				if get_entity_type() == Entities.Grass and can_harvest():
+					harvest()
 				if col < width - 1:
 					move(forward)
 
@@ -70,7 +58,7 @@ for i in range(count):
 
 for i in range(1, count):
 	s, e = ranges[i]
-	spawn_drone(carrot_range, s, e)
+	spawn_drone(grass_range, s, e)
 
 s0, e0 = ranges[0]
-carrot_range(s0, e0)
+grass_range(s0, e0)

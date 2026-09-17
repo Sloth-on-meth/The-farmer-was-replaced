@@ -1,4 +1,4 @@
-quick_print("Starting mixed crop farm program f1")
+print("Starting mixed crop farm program f1")
 
 def move_to(x, y):
 	while get_pos_x() < x:

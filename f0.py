@@ -1,2 +1,2 @@
-quick_print("Starting farm reset program f0")
+print("Starting farm reset program f0")
 clear()
